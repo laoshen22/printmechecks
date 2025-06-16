@@ -27,6 +27,14 @@
                     <span class="dollar-line"></span>
                 </div>
                 <div class="bank-name" style="position: absolute; top: 300px; left: 60px">{{check.bankName}}</div>
+
+
+
+
+
+               
+
+
                 <div class="memo-data" style="position: absolute; top: 367px; left: 120px">{{check.memo}}</div>
                 <div class="memo" style="position: absolute; top: 390px; left: 60px">
                     Memo: ____________________________________
@@ -35,6 +43,10 @@
                 <div class="signature" style="position: absolute; top: 390px; left: 750px">
                     _________________________________________________
                 </div>
+             
+
+
+               
                 <div class="banking" style="position: absolute; top: 420px; left: 80px">
                     <div class="routing" style="display: inline;">
                         a{{check.routingNumber}}a
@@ -47,6 +59,13 @@
         <div class="check-data" style="position: absolute; top: 450px">
             <div class="alert alert-primary" role="alert"><strong>Background does not print.</strong></div>
             <button type="button" style="float: right;" class="btn btn-primary" @click="printCheck">Print (Ctrl + P)</button>
+
+            <!-- 🔶 REVISION 2: Positive‑Pay Export 按钮（Check Generation 格式） -->
+            <button type="button" style="float: right; margin-right:10px;" class="btn btn-success" @click="exportPositivePay">Export Positive Pay</button>
+
+
+
+
             <form class="row g-3">
                 <div class="col-md-6">
                     <label for="inputEmail4" class="form-label">Account Holder Name</label>
@@ -145,6 +164,39 @@ const toWords: (denom: number | string) => string = (denom) => {
     }
 }
 
+
+// 🔶 REVISION 2: 按 Check Generation.csv 模板导出 Positive‑Pay
+/**
+ * 导出符合 "Check Generation.csv" 模板的一行 CSV：
+ * I,<AccountNo>,<CheckNumber>,<mmddyy>,<Amount>,<Payee>
+ * 首行仍保留原文件中的 header。
+ */
+function exportPositivePay() {
+  // date → mmddyy
+  const [m, d, y] = check.date.split('/')
+  const mmddyy = `${m.padStart(2, '0')}${d.padStart(2, '0')}${y.slice(-2)}`
+
+  // Header 与示例文件一致
+  const header = `I,${check.bankAccountNumber},check number,mmddyy,check amount,payee\n`
+  const row = [
+    'I',
+    check.bankAccountNumber,
+    check.checkNumber,
+    mmddyy,
+    Number(check.amount).toFixed(2),
+    check.payTo.toUpperCase(),
+  ].join(',')
+
+  const blob = new Blob([header + row + '\n'], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `Check_Generation_${check.checkNumber}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+
 function printCheck () {
     const style = document.createElement('style');
     style.textContent = `
@@ -198,20 +250,20 @@ function genNewCheck () {
     let checkList = JSON.parse(localStorage.getItem('checkList') || '[]')
     let recentCheck = checkList[checkList.length - 1]
     let check = {}
-    check.accountHolderName = recentCheck?.accountHolderName || 'John Smith'
-    check.accountHolderAddress = recentCheck?.accountHolderAddress || '123 Cherry Tree Lane'
-    check.accountHolderCity = recentCheck?.accountHolderCity || 'New York'
+    check.accountHolderName = recentCheck?.accountHolderName || ''
+    check.accountHolderAddress = recentCheck?.accountHolderAddress || '179-20 149th Ave'
+    check.accountHolderCity = recentCheck?.accountHolderCity || 'Jamaica'
     check.accountHolderState = recentCheck?.accountHolderState || 'NY'
-    check.accountHolderZip = recentCheck?.accountHolderZip || '10001'
+    check.accountHolderZip = recentCheck?.accountHolderZip || '11434'
     check.checkNumber = recentCheck?.checkNumber ? (parseInt(recentCheck?.checkNumber) + 1) : '100'
     check.date = new Date().toLocaleDateString()
-    check.bankName = recentCheck?.bankName || 'Bank Name, INC'
+    check.bankName = recentCheck?.bankName || 'JPMORGAN CHASE BANK, N.A.'
     check.amount = '0.00'
-    check.payTo = 'Michael Johnson'
-    check.memo = recentCheck?.memo || 'Rent'
-    check.signature = recentCheck?.signature || 'John Smith'
-    check.routingNumber = recentCheck?.routingNumber || '022303659'
-    check.bankAccountNumber = recentCheck?.bankAccountNumber || '000000000000'
+    check.payTo = 'ANTHONT J. PREVOSTI'
+    check.memo = recentCheck?.memo || 'Reimbursement'
+    check.signature = recentCheck?.signature || ''
+    check.routingNumber = recentCheck?.routingNumber || '021000021'
+    check.bankAccountNumber = recentCheck?.bankAccountNumber || '931309816'
     return check
 }
 
@@ -363,4 +415,18 @@ label {
     height: 28px;
     margin-top: -32px;
 }
+
+
+/* src/assets/style.css */
+@media print {
+  #check-box-print {
+    transform: translate(-12px, 0) scale(0.93);  /* ←左移12px，整体缩小3% */
+    transform-origin: top left;
+  }
+}
 </style>
+
+
+
+
+
